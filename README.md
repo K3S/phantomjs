@@ -27,3 +27,32 @@ PhantomJS ([phantomjs.org](http://phantomjs.org)) is a headless WebKit scriptabl
 PhantomJS is free software/open source, and is distributed under the [BSD license](http://opensource.org/licenses/BSD-3-Clause). It contains third-party code, see the included `third-party.txt` file for the license information on third-party code.
 
 PhantomJS is created and maintained by [Ariya Hidayat](http://ariya.ofilabs.com/about) (Twitter: [@ariyahidayat](http://twitter.com/ariyahidayat)), with the help of [many contributors](https://github.com/ariya/phantomjs/contributors). Follow the official Twitter stream [@PhantomJS](http://twitter.com/PhantomJS) to get the frequent development updates.
+
+## Build Steps
+
+**Hardware requirements**
+
+- RAM: at least 4 GB.
+- Disk space: at least 3 GB.
+- CPU: 1.8 GHz, 4 cores or more.
+
+PhantomJS is still a web browser, albeit headless. Thus, building it from source takes a long time (mainly due to thousands of files in the WebKit module). Estimated build time for a 4-core system is 30 minutes.
+
+**Linux requirements**
+
+First, install the development packages of the following tools and libraries: GNU C++ compiler, bison, flex, gperf, Perl, Ruby, SQLite, FreeType, Fontconfig, OpenSSL, and ICU. The actual package names may vary from one distribution to another.
+
+**On Debian-based distro (tested on Ubuntu 14.04 and Debian 7.0), run:**
+
+sudo apt-get install build-essential g++ flex bison gperf ruby perl 
+  libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev 
+  libpng-dev libjpeg-dev python libx11-dev libxext-dev
+
+Note: It is recommend also to install ttf-mscorefonts-installer package.
+
+
+**On Fedora-based distro (tested on CentOS 6), run:**
+
+sudo yum -y install gcc gcc-c++ make flex bison gperf ruby 
+  openssl-devel freetype-devel fontconfig-devel libicu-devel sqlite-devel 
+  libpng-devel libjpeg-devel
