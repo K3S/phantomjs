@@ -186,8 +186,14 @@ bool LinuxPtraceDumper::GetThreadInfoByIndex(size_t index, ThreadInfo* info) {
     return false;
   }
 
-#if !defined(__ANDROID__)
+#if !defined(__ANDROID__) && !defined(__PPC__)
   if (sys_ptrace(PTRACE_GETFPREGS, tid, NULL, &info->fpregs) == -1) {
+    return false;
+  }
+#endif
+
+#if defined(__PPC__)
+  if (sys_ptrace(PTRACE_GETFPREGS, tid, NULL, &info->regs) == -1) {
     return false;
   }
 #endif
@@ -217,6 +223,8 @@ bool LinuxPtraceDumper::GetThreadInfoByIndex(size_t index, ThreadInfo* info) {
   memcpy(&stack_pointer, &info->regs.rsp, sizeof(info->regs.rsp));
 #elif defined(__ARM_EABI__)
   memcpy(&stack_pointer, &info->regs.ARM_sp, sizeof(info->regs.ARM_sp));
+#elif defined(__PPC__)
+ memcpy(&stack_pointer, &info->regs.gpr[1], sizeof(info->regs.gpr[1]));
 #else
 #error "This code hasn't been ported to your platform yet."
 #endif

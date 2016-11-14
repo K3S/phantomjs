@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/ucontext.h>
 
 #if defined(__ANDROID__)
 #include "client/linux/android_ucontext.h"
@@ -174,6 +175,15 @@ class ExceptionHandler {
     pid_t tid;  // the crashing thread.
     struct ucontext context;
 #if !defined(__ARM_EABI__)
+#if defined(__PPC__)
+  struct _libc_fpstate
+  {
+        double fpregs[32];
+        double fpscr;
+        unsigned int _pad[2];
+};
+#endif
+
     // #ifdef this out because FP state is not part of user ABI for Linux ARM.
     struct _libc_fpstate float_state;
 #endif

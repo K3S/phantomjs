@@ -1256,6 +1256,9 @@ struct kernel_statfs {
 #ifndef __NR_pwrite64
 #define __NR_pwrite64           180
 #endif
+#ifndef __NR_mmap2
+#define __NR_mmap2              192
+#endif
 #ifndef __NR_ugetrlimit
 #define __NR_ugetrlimit         190
 #endif

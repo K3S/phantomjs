@@ -40,7 +40,7 @@
 
 #include "third_party/lss/linux_syscall_support.h"
 
-#if defined(__ARM_EABI__)
+#if defined(__ARM_EABI__) || defined(__PPC__)
 #define TID_PTR_REGISTER "r3"
 #elif defined(__i386)
 #define TID_PTR_REGISTER "ecx"

@@ -139,7 +139,11 @@ typedef struct prstatus {       /* Information about thread; includes CPU reg*/
   elf_timeval    pr_stime;      /* System time                               */
   elf_timeval    pr_cutime;     /* Cumulative user time                      */
   elf_timeval    pr_cstime;     /* Cumulative system time                    */
+#if defined(__PPC__)
+  pt_regs pr_reg;
+#else
   user_regs_struct pr_reg;      /* CPU registers                             */
+#endif
   uint32_t       pr_fpvalid;    /* True if math co-processor being used      */
 } prstatus;
 
@@ -195,8 +199,12 @@ struct CrashedProcess {
 
   struct Thread {
     pid_t tid;
+#if defined(__PPC__)
+    pt_regs regs;
+#else
     user_regs_struct regs;
     user_fpregs_struct fpregs;
+#endif
 #if defined(__i386__)
     user_fpxregs_struct fpxregs;
 #endif
@@ -323,6 +331,24 @@ ParseThreadRegisters(CrashedProcess::Thread* thread,
   memcpy(thread->fpregs.st_space, rawregs->flt_save.float_registers, 8 * 16);
   memcpy(thread->fpregs.xmm_space, rawregs->flt_save.xmm_registers, 16 * 16);
 }
+#elif defined(__PPC64__)
+static void
+ParseThreadRegisters(CrashedProcess::Thread* thread,
+                     const MinidumpMemoryRange& range) {
+  const MDRawContextPPC64* rawregs = range.GetData<MDRawContextPPC64>(0);
+
+  for(int i = 0; i < MD_CONTEXT_PPC64_GPR_COUNT; i++)
+  thread->regs.gpr[i] = rawregs->gpr[i];
+
+  thread->regs.nip = rawregs->srr0;
+  thread->regs.msr = rawregs->srr1;
+  thread->regs.ctr = rawregs->ctr;
+  thread->regs.xer = rawregs->xer;
+  thread->regs.link =  rawregs->lr;
+  thread->regs.ccr = rawregs->cr;
+
+}
+
 #else
 #error "This code has not been ported to your platform yet"
 #endif
@@ -378,6 +404,14 @@ ParseSystemInfo(CrashedProcess* crashinfo, const MinidumpMemoryRange& range,
     fprintf(stderr,
             "This version of minidump-2-core only supports x86 (64bit)%s.\n",
             sysinfo->processor_architecture == MD_CPU_ARCHITECTURE_X86 ?
+            ",\nbut the minidump file is from a 32bit machine" : "");
+    _exit(1);
+  }
+#elif defined(__PPC64__)
+  if (sysinfo->processor_architecture != MD_CPU_ARCHITECTURE_PPC) {
+    fprintf(stderr,
+            "This version of minidump-2-core only supports PowerPC (64bit)%s.\n",
+            sysinfo->processor_architecture == MD_CPU_ARCHITECTURE_PPC ?
             ",\nbut the minidump file is from a 32bit machine" : "");
     _exit(1);
   }
@@ -670,7 +704,11 @@ WriteThread(const CrashedProcess::Thread& thread, int fatal_signal) {
   pr.pr_info.si_signo = fatal_signal;
   pr.pr_cursig = fatal_signal;
   pr.pr_pid = thread.tid;
+#if defined(__PPC__)
+  memcpy(&pr.pr_reg, &thread.regs, sizeof(pt_regs));
+#else
   memcpy(&pr.pr_reg, &thread.regs, sizeof(user_regs_struct));
+#endif
 
   Nhdr nhdr;
   memset(&nhdr, 0, sizeof(nhdr));
@@ -683,6 +721,7 @@ WriteThread(const CrashedProcess::Thread& thread, int fatal_signal) {
     return false;
   }
 
+#if !defined(__PPC__)
   nhdr.n_descsz = sizeof(user_fpregs_struct);
   nhdr.n_type = NT_FPREGSET;
   if (!writea(1, &nhdr, sizeof(nhdr)) ||
@@ -690,6 +729,7 @@ WriteThread(const CrashedProcess::Thread& thread, int fatal_signal) {
       !writea(1, &thread.fpregs, sizeof(user_fpregs_struct))) {
     return false;
   }
+#endif
 
 #if defined(__i386__)
   nhdr.n_descsz = sizeof(user_fpxregs_struct);
@@ -1019,8 +1059,10 @@ main(int argc, char** argv) {
                   // sizeof(Nhdr) + 8 + sizeof(user) +
                   sizeof(Nhdr) + 8 + crashinfo.auxv_length +
                   crashinfo.threads.size() * (
-                    (sizeof(Nhdr) + 8 + sizeof(prstatus)) +
-                     sizeof(Nhdr) + 8 + sizeof(user_fpregs_struct)
+                    (sizeof(Nhdr) + 8 + sizeof(prstatus))
+#if !defined(__PPC__)
+                   +  sizeof(Nhdr) + 8 + sizeof(user_fpregs_struct)
+#endif
 #if defined(__i386__)
                    + sizeof(Nhdr) + 8 + sizeof(user_fpxregs_struct)
 #endif

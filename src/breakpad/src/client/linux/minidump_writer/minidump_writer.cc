@@ -360,6 +360,49 @@ static void CPUFillFromUContext(MDRawContextARM *out, const ucontext *uc,
   memset(&out->float_save.extra, 0, sizeof(out->float_save.extra));
 }
 
+#elif defined(__PPC64__)
+
+  struct _libc_fpstate
+  {
+        double fpregs[32];
+        double fpscr;
+        unsigned int _pad[2];
+  };
+
+typedef MDRawContextPPC64 RawContextCPU;
+
+static void CPUFillFromThreadInfo(MDRawContextPPC64 *out,
+                                  const google_breakpad::ThreadInfo &info) {
+  out->context_flags = MD_CONTEXT_PPC_FULL;
+
+  for (int i = 0; i < MD_CONTEXT_PPC64_GPR_COUNT; ++i)
+    out->gpr[i] = info.regs.gpr[i];
+    out->srr0 = info.regs.nip;
+    out->srr1 = info.regs.msr;
+    out->cr = info.regs.ccr;
+    out->xer = info.regs.xer;
+    out->lr = info.regs.link;
+    out->ctr = info.regs.ctr;
+}
+
+static void CPUFillFromUContext(MDRawContextPPC64 *out, const ucontext *uc,
+                                const struct _libc_fpstate* fpregs) {
+typedef unsigned long greg_t;
+  const greg_t* regs = uc->uc_mcontext.gp_regs;
+
+  out->context_flags = MD_CONTEXT_PPC_FULL;
+
+ for (int i = 0; i < MD_CONTEXT_PPC64_GPR_COUNT; ++i)
+  out->gpr[i] = regs[i];
+
+  out->vrsave = uc->uc_mcontext.v_regs->vrsave;
+
+ for (int i = 0; i < MD_FLOATINGSAVEAREA_PPC_FPR_COUNT; ++i)
+  out->float_save.fpregs[i] = fpregs->fpregs[i];
+
+  out->float_save.fpscr = fpregs->fpscr;
+}
+
 #else
 #error "This code has not been ported to your platform yet."
 #endif
@@ -374,7 +417,7 @@ class MinidumpWriter {
                  LinuxDumper* dumper)
       : filename_(filename),
         ucontext_(context ? &context->context : NULL),
-#if !defined(__ARM_EABI__)
+#if !defined(__ARM_EABI__) && !defined(__PPC__)
         float_state_(context ? &context->float_state : NULL),
 #else
         // TODO: fix this after fixing ExceptionHandler
@@ -1054,6 +1097,14 @@ class MinidumpWriter {
   uintptr_t GetInstructionPointer() {
     return ucontext_->uc_mcontext.arm_ip;
   }
+#elif defined(__PPC__)
+  uintptr_t GetStackPointer() {
+    return ucontext_->uc_mcontext.regs->gpr[1];
+  }
+
+  uintptr_t GetInstructionPointer() {
+    return ucontext_->uc_mcontext.regs->nip;
+  }
 #else
 #error "This code has not been ported to your platform yet."
 #endif
@@ -1088,6 +1139,8 @@ class MinidumpWriter {
         MD_CPU_ARCHITECTURE_AMD64;
 #elif defined(__arm__)
         MD_CPU_ARCHITECTURE_ARM;
+#elif defined(__PPC__)
+        MD_CPU_ARCHITECTURE_PPC;
 #else
 #error "Unknown CPU arch"
 #endif

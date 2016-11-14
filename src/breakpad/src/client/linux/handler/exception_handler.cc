@@ -346,9 +346,9 @@ bool ExceptionHandler::HandleSignal(int sig, siginfo_t* info, void* uc) {
 #if !defined(__ARM_EABI__)
   // FP state is not part of user ABI on ARM Linux.
   struct ucontext *uc_ptr = (struct ucontext*)uc;
-  if (uc_ptr->uc_mcontext.fpregs) {
+  if (uc_ptr->uc_mcontext.fp_regs) {
     memcpy(&context.float_state,
-           uc_ptr->uc_mcontext.fpregs,
+           uc_ptr->uc_mcontext.fp_regs,
            sizeof(context.float_state));
   }
 #endif
@@ -490,7 +490,7 @@ bool ExceptionHandler::WriteMinidump() {
   int getcontext_result = getcontext(&context.context);
   if (getcontext_result)
     return false;
-  memcpy(&context.float_state, context.context.uc_mcontext.fpregs,
+  memcpy(&context.float_state, context.context.uc_mcontext.fp_regs,
          sizeof(context.float_state));
   context.tid = sys_gettid();
 

@@ -74,7 +74,7 @@ typedef struct
 #define AT_SYSINFO_EHDR 33
 #endif
 #endif  // __ANDROID__
-#elif defined(__x86_64)
+#elif defined(__x86_64) || defined(__PPC64__)
 typedef Elf64_auxv_t elf_aux_entry;
 #endif
 // When we find the VDSO mapping in the process's address space, this
@@ -110,6 +110,8 @@ struct ThreadInfo {
   struct user_regs regs;
   struct user_fpregs fpregs;
 #endif  // __ANDROID__
+#elif defined(__PPC64__)
+  struct pt_regs regs;
 #endif
 };
 
