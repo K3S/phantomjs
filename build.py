@@ -234,12 +234,13 @@ class PhantomJSBuilder(object):
                     "-fontconfig", # Fontconfig for better font matching
                     "-icu", # ICU for QtWebKit (which provides the OSX headers) but not QtBase
                     "-platform", "aix-g++-64",
+                    "-lbsd",
                     "-v",
                     "-no-libproxy",  
                     "-no-iconv", 
                     "-no-tslib",
                     "-no-gstreamer", 
-                    "-no-audio-backend"
+                    "-no-gui"
                 ])
         return platformOptions
 
@@ -261,7 +262,8 @@ class PhantomJSBuilder(object):
             "-qt-zlib",
             "-qt-libpng",
             "-qt-libjpeg",
-            "-qt-pcre",
+            "-system-pcre",
+            "-system-harfbuzz",
             # disable unnecessary Qt features
             "-nomake", "examples",
             "-nomake", "tools",
