@@ -240,7 +240,10 @@ class PhantomJSBuilder(object):
                     "-no-iconv", 
                     "-no-tslib",
                     "-no-gstreamer", 
-                    "-no-gui"
+                    "-no-gui",
+                    "-mp",
+                    "-no-cetest",
+                    "-no-angle"
                 ])
         return platformOptions
 
