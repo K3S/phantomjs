@@ -233,6 +233,13 @@ class PhantomJSBuilder(object):
                 platformOptions.extend([
                     "-fontconfig", # Fontconfig for better font matching
                     "-icu", # ICU for QtWebKit (which provides the OSX headers) but not QtBase
+                    "-platform", "aix-g++-64",
+                    "-v",
+                    "-no-libproxy",  
+                    "-no-iconv", 
+                    "-no-tslib",
+                    "-no-gstreamer", 
+                    "-no-audio-backend"
                 ])
         return platformOptions
 
